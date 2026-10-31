@@ -1,0 +1,347 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1f3a5f">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Tracker">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="apple-touch-icon" href="icon.svg">
+<title>Business Tracker</title>
+<style>
+:root{
+  --bg:#f5f6f8;--card:#fff;--text:#1b1f24;--muted:#6b7280;--line:#e3e6ea;
+  --brand:#1f3a5f;--accent:#f2b33d;--danger:#c0392b;--ok:#2e8b57;--warn:#d98a00;
+}
+@media (prefers-color-scheme: dark){
+  :root{--bg:#111418;--card:#1b2027;--text:#e8eaed;--muted:#9aa3ad;--line:#2b323b;--brand:#6fa3e0}
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--text);font:16px/1.4 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif}
+header{position:sticky;top:0;z-index:5;background:var(--brand);color:#fff;padding:calc(env(safe-area-inset-top) + 12px) 16px 10px}
+header h1{margin:0;font-size:20px}
+.chips{display:flex;gap:8px;overflow-x:auto;padding:10px 0 2px;scrollbar-width:none}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;border:1px solid rgba(255,255,255,.4);background:transparent;color:#fff;border-radius:999px;padding:5px 12px;font-size:14px}
+.chip.on{background:#fff;color:#1f3a5f;font-weight:600}
+.chip .dot{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:6px;vertical-align:middle}
+main{padding:14px 16px calc(env(safe-area-inset-bottom) + 90px);max-width:720px;margin:0 auto}
+nav{position:fixed;bottom:0;left:0;right:0;display:flex;background:var(--card);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom);z-index:5}
+nav button{flex:1;border:0;background:none;color:var(--muted);padding:10px 0 8px;font-size:12px}
+nav button span{display:block;font-size:20px}
+nav button.on{color:var(--brand);font-weight:600}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:10px}
+.row{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.title{font-weight:600}
+.sub{color:var(--muted);font-size:14px}
+.tag{display:inline-block;font-size:12px;padding:2px 8px;border-radius:999px;background:var(--line);margin-right:4px}
+.biz{border-left:5px solid var(--c,#999)}
+.stats{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}
+.stat b{display:block;font-size:26px}
+.stat.alert b{color:var(--danger)}
+h2{font-size:15px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);margin:18px 0 8px}
+.overdue{color:var(--danger);font-weight:600}
+.done .title{text-decoration:line-through;color:var(--muted)}
+.check{width:26px;height:26px;flex:none;border:2px solid var(--brand);border-radius:7px;background:none;color:#fff;font-size:16px;line-height:1;margin-top:1px}
+.check.on{background:var(--brand)}
+.fab{position:fixed;right:18px;bottom:calc(env(safe-area-inset-bottom) + 76px);width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:#1b1f24;font-size:30px;box-shadow:0 4px 12px rgba(0,0,0,.25);z-index:6}
+.toolbar{display:flex;gap:8px;margin-bottom:10px}
+.toolbar input,.toolbar select{flex:1;min-width:0}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--card);color:var(--text)}
+textarea{min-height:70px}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{border:0;border-radius:8px;padding:11px 16px;font:inherit;font-weight:600;background:var(--brand);color:#fff}
+.btn.ghost{background:var(--line);color:var(--text)}
+.btn.danger{background:var(--danger)}
+.btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btns .btn{flex:1}
+dialog{border:0;border-radius:16px 16px 0 0;padding:18px 16px calc(env(safe-area-inset-bottom) + 18px);width:100%;max-width:720px;margin:auto auto 0;background:var(--card);color:var(--text);max-height:92vh;overflow:auto}
+dialog::backdrop{background:rgba(0,0,0,.45)}
+dialog h3{margin:0 0 4px}
+.empty{text-align:center;color:var(--muted);padding:30px 10px}
+.st-New{background:#dbeafe;color:#1e40af}.st-In{background:#fef3c7;color:#92400e}
+.st-Shipped{background:#e0e7ff;color:#3730a3}.st-Delivered{background:#d1fae5;color:#065f46}
+.st-Cancelled{background:#fee2e2;color:#991b1b}
+.pr-High{background:#fee2e2;color:#991b1b}.pr-Medium{background:#fef3c7;color:#92400e}.pr-Low{background:#e5e7eb;color:#374151}
+.amt{font-weight:600;white-space:nowrap}
+.clickable{cursor:pointer}
+</style>
+</head>
+<body>
+<header>
+  <h1 id="hdr">Business Tracker</h1>
+  <div class="chips" id="chips"></div>
+</header>
+<main id="main"></main>
+<button class="fab" id="fab" aria-label="Add">+</button>
+<nav id="nav">
+  <button data-tab="home" class="on"><span>🏠</span>Home</button>
+  <button data-tab="orders"><span>📦</span>Orders</button>
+  <button data-tab="actions"><span>✅</span>Actions</button>
+  <button data-tab="biz"><span>🏢</span>Businesses</button>
+</nav>
+<dialog id="dlg"><form id="form" method="dialog"></form></dialog>
+
+<script>
+const KEY = 'bizTracker.v1';
+const STATUSES = ['New','In Progress','Shipped','Delivered','Cancelled'];
+const OPEN_STATUSES = ['New','In Progress','Shipped'];
+const PRIORITIES = ['High','Medium','Low'];
+const COLORS = ['#e74c3c','#3498db','#2ecc71','#9b59b6','#f39c12','#1abc9c','#e84393','#34495e'];
+
+let db = load();
+let tab = 'home', bizFilter = 'all', orderQuery = '', orderStatus = 'open', showDone = false;
+
+function load(){
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (d && d.businesses) return d; } catch(e){}
+  return { businesses: [], orders: [], actions: [] };
+}
+function save(){
+  try { localStorage.setItem(KEY, JSON.stringify(db)); } catch(e){ alert('Could not save: ' + e.message); }
+}
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2,7);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const today = () => new Date().toISOString().slice(0,10);
+const biz = id => db.businesses.find(b => b.id === id) || {name:'(deleted)', color:'#999'};
+const money = n => (n === '' || n == null || isNaN(n)) ? '' : Number(n).toLocaleString(undefined,{style:'currency',currency:'USD'});
+const fmtDate = d => d ? new Date(d + 'T00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '';
+const isOverdue = (d, closed) => d && !closed && d < today();
+const plural = (n, w) => `${n} ${w}${n===1?'':'s'}`;
+const inFilter = x => bizFilter === 'all' || x.businessId === bizFilter;
+
+function renderChips(){
+  const c = document.getElementById('chips');
+  c.style.display = db.businesses.length ? 'flex' : 'none';
+  c.innerHTML = `<button class="chip ${bizFilter==='all'?'on':''}" data-b="all">All</button>` +
+    db.businesses.map(b => `<button class="chip ${bizFilter===b.id?'on':''}" data-b="${b.id}"><span class="dot" style="background:${esc(b.color)}"></span>${esc(b.name)}</button>`).join('');
+  c.querySelectorAll('.chip').forEach(el => el.onclick = () => { bizFilter = el.dataset.b; render(); });
+}
+
+function orderCard(o){
+  const b = biz(o.businessId), closed = !OPEN_STATUSES.includes(o.status);
+  const stClass = 'st-' + o.status.split(' ')[0];
+  return `<div class="card biz clickable" style="--c:${esc(b.color)}" data-order="${o.id}">
+    <div class="row"><div><div class="title">${esc(o.customer || 'Order')}${o.number ? ' · #' + esc(o.number) : ''}</div>
+    <div class="sub">${esc(b.name)}${o.items ? ' — ' + esc(o.items) : ''}</div></div>
+    <div class="amt">${money(o.amount)}</div></div>
+    <div style="margin-top:6px"><span class="tag ${stClass}">${esc(o.status)}</span>
+    ${o.due ? `<span class="sub ${isOverdue(o.due, closed)?'overdue':''}">Due ${fmtDate(o.due)}</span>` : ''}</div></div>`;
+}
+function actionCard(a){
+  const b = biz(a.businessId);
+  return `<div class="card biz ${a.done?'done':''}" style="--c:${esc(b.color)}">
+    <div class="row" style="justify-content:flex-start">
+      <button class="check ${a.done?'on':''}" data-toggle="${a.id}" aria-label="Mark done">${a.done?'✓':''}</button>
+      <div class="clickable" data-action="${a.id}" style="flex:1">
+        <div class="title">${esc(a.title)}</div>
+        <div class="sub">${esc(b.name)}${a.due ? ` · <span class="${isOverdue(a.due, a.done)?'overdue':''}">Due ${fmtDate(a.due)}</span>` : ''}</div>
+        <div style="margin-top:4px"><span class="tag pr-${a.priority}">${a.priority}</span></div>
+      </div></div></div>`;
+}
+const sortActions = list => list.slice().sort((a,b) =>
+  (a.done - b.done) || ((a.due||'9999') < (b.due||'9999') ? -1 : (a.due||'9999') > (b.due||'9999') ? 1 : 0) ||
+  PRIORITIES.indexOf(a.priority) - PRIORITIES.indexOf(b.priority));
+const sortOrders = list => list.slice().sort((a,b) => (b.date||'').localeCompare(a.date||'') || b.created - a.created);
+
+function needBiz(){
+  return `<div class="empty"><p style="font-size:40px;margin:0">🏢</p><p>Add your first business to get started.</p>
+    <button class="btn" onclick="editBiz()">Add a business</button></div>`;
+}
+
+function renderHome(){
+  if (!db.businesses.length) return needBiz();
+  const orders = db.orders.filter(inFilter), actions = db.actions.filter(inFilter);
+  const open = orders.filter(o => OPEN_STATUSES.includes(o.status));
+  const lateOrders = open.filter(o => isOverdue(o.due, false));
+  const openActs = actions.filter(a => !a.done);
+  const lateActs = openActs.filter(a => isOverdue(a.due, false));
+  const openValue = open.reduce((s,o) => s + (Number(o.amount)||0), 0);
+  const soon = sortActions(openActs).slice(0,5);
+  let html = `<div class="stats">
+    <div class="stat"><b>${open.length}</b>Open orders</div>
+    <div class="stat"><b>${money(openValue) || '$0.00'}</b>Open order value</div>
+    <div class="stat ${lateOrders.length?'alert':''}"><b>${lateOrders.length}</b>Late orders</div>
+    <div class="stat ${lateActs.length?'alert':''}"><b>${openActs.length}</b>Open actions${lateActs.length?` (${lateActs.length} overdue)`:''}</div>
+  </div>`;
+  if (bizFilter === 'all' && db.businesses.length > 1){
+    html += `<h2>By business</h2>` + db.businesses.map(b => {
+      const bo = db.orders.filter(o => o.businessId===b.id && OPEN_STATUSES.includes(o.status)).length;
+      const ba = db.actions.filter(a => a.businessId===b.id && !a.done).length;
+      return `<div class="card biz clickable" style="--c:${esc(b.color)}" data-pick="${b.id}"><div class="row"><div class="title">${esc(b.name)}</div><div class="sub">${plural(bo,'order')} · ${plural(ba,'action')}</div></div></div>`;
+    }).join('');
+  }
+  html += `<h2>Next action items</h2>` + (soon.length ? soon.map(actionCard).join('') : `<div class="sub">Nothing open — nice.</div>`);
+  html += `<h2>Open orders</h2>` + (open.length ? sortOrders(open).slice(0,5).map(orderCard).join('') : `<div class="sub">No open orders.</div>`);
+  return html;
+}
+
+function renderOrders(){
+  if (!db.businesses.length) return needBiz();
+  let list = db.orders.filter(inFilter);
+  if (orderStatus === 'open') list = list.filter(o => OPEN_STATUSES.includes(o.status));
+  else if (orderStatus !== 'all') list = list.filter(o => o.status === orderStatus);
+  const q = orderQuery.trim().toLowerCase();
+  if (q) list = list.filter(o => [o.customer,o.number,o.items,o.notes].join(' ').toLowerCase().includes(q));
+  return `<div class="toolbar">
+      <input id="q" type="search" placeholder="Search orders" value="${esc(orderQuery)}">
+      <select id="st"><option value="open">Open</option><option value="all">All</option>${STATUSES.map(s=>`<option>${s}</option>`).join('')}</select>
+    </div>` + (list.length ? sortOrders(list).map(orderCard).join('') : `<div class="empty">No orders here yet. Tap + to add one.</div>`);
+}
+
+function renderActions(){
+  if (!db.businesses.length) return needBiz();
+  let list = db.actions.filter(inFilter);
+  const doneCount = list.filter(a => a.done).length;
+  if (!showDone) list = list.filter(a => !a.done);
+  return (list.length ? sortActions(list).map(actionCard).join('') : `<div class="empty">No open action items. Tap + to add one.</div>`) +
+    (doneCount ? `<div class="btns"><button class="btn ghost" id="toggleDone">${showDone?'Hide':'Show'} completed (${doneCount})</button></div>` : '');
+}
+
+function renderBiz(){
+  return (db.businesses.length ? db.businesses.map(b => {
+    const n = db.orders.filter(o => o.businessId===b.id).length, a = db.actions.filter(x => x.businessId===b.id && !x.done).length;
+    return `<div class="card biz clickable" style="--c:${esc(b.color)}" data-biz="${b.id}"><div class="title">${esc(b.name)}</div><div class="sub">${plural(n,'order')} · ${plural(a,'open action')}${b.notes?' · '+esc(b.notes):''}</div></div>`;
+  }).join('') : needBiz()) +
+  `<h2>Backup</h2><div class="card"><div class="sub">Your data is stored only on this device. Export a backup now and then, or to move to a new phone.</div>
+   <div class="btns"><button class="btn ghost" id="exp">Export backup</button><button class="btn ghost" id="imp">Import backup</button></div>
+   <input type="file" id="impFile" accept="application/json,.json" hidden></div>`;
+}
+
+function render(){
+  renderChips();
+  const m = document.getElementById('main');
+  m.innerHTML = {home:renderHome, orders:renderOrders, actions:renderActions, biz:renderBiz}[tab]();
+  document.getElementById('fab').style.display = (tab==='home' && !db.businesses.length) ? 'none' : '';
+  document.querySelectorAll('nav button').forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
+  m.querySelectorAll('[data-order]').forEach(el => el.onclick = () => editOrder(el.dataset.order));
+  m.querySelectorAll('[data-action]').forEach(el => el.onclick = () => editAction(el.dataset.action));
+  m.querySelectorAll('[data-biz]').forEach(el => el.onclick = () => editBiz(el.dataset.biz));
+  m.querySelectorAll('[data-pick]').forEach(el => el.onclick = () => { bizFilter = el.dataset.pick; render(); });
+  m.querySelectorAll('[data-toggle]').forEach(el => el.onclick = e => {
+    e.stopPropagation(); const a = db.actions.find(x => x.id === el.dataset.toggle);
+    a.done = !a.done; a.doneAt = a.done ? today() : null; save(); render();
+  });
+  const q = document.getElementById('q');
+  if (q){ q.oninput = () => { orderQuery = q.value; const pos = q.selectionStart; render(); const n = document.getElementById('q'); n.focus(); n.setSelectionRange(pos,pos); }; }
+  const st = document.getElementById('st'); if (st){ st.value = orderStatus; st.onchange = () => { orderStatus = st.value; render(); }; }
+  const td = document.getElementById('toggleDone'); if (td) td.onclick = () => { showDone = !showDone; render(); };
+  const exp = document.getElementById('exp'); if (exp) exp.onclick = exportData;
+  const imp = document.getElementById('imp'); if (imp) imp.onclick = () => document.getElementById('impFile').click();
+  const f = document.getElementById('impFile'); if (f) f.onchange = importData;
+}
+
+/* ---------- forms ---------- */
+const dlg = document.getElementById('dlg'), form = document.getElementById('form');
+function openForm(html, onSave, onDelete){
+  form.innerHTML = html + `<div class="btns">
+    ${onDelete ? '<button type="button" class="btn danger" id="del">Delete</button>' : ''}
+    <button type="button" class="btn ghost" id="cancel">Cancel</button>
+    <button type="submit" class="btn" id="ok">Save</button></div>`;
+  form.querySelector('#cancel').onclick = () => dlg.close();
+  if (onDelete) form.querySelector('#del').onclick = () => { if (confirm('Delete this? This cannot be undone.')) { onDelete(); save(); dlg.close(); render(); } };
+  form.onsubmit = e => {
+    e.preventDefault();
+    if (!form.reportValidity()) return;
+    const data = Object.fromEntries(new FormData(form));
+    onSave(data); save(); dlg.close(); render();
+  };
+  dlg.showModal();
+}
+const bizOptions = sel => db.businesses.map(b => `<option value="${b.id}" ${b.id===sel?'selected':''}>${esc(b.name)}</option>`).join('');
+const defaultBiz = () => bizFilter !== 'all' ? bizFilter : (db.businesses[0]||{}).id;
+
+function editOrder(id){
+  const o = db.orders.find(x => x.id === id) || {businessId:defaultBiz(), status:'New', date:today()};
+  openForm(`<h3>${id?'Edit':'New'} order</h3>
+    <label>Business</label><select name="businessId" required>${bizOptions(o.businessId)}</select>
+    <div class="two"><div><label>Customer</label><input name="customer" value="${esc(o.customer)}" required></div>
+    <div><label>Order #</label><input name="number" value="${esc(o.number)}"></div></div>
+    <label>Items / description</label><input name="items" value="${esc(o.items)}">
+    <div class="two"><div><label>Amount ($)</label><input name="amount" type="number" step="0.01" inputmode="decimal" value="${esc(o.amount)}"></div>
+    <div><label>Status</label><select name="status">${STATUSES.map(s=>`<option ${s===o.status?'selected':''}>${s}</option>`).join('')}</select></div></div>
+    <div class="two"><div><label>Order date</label><input name="date" type="date" value="${esc(o.date)}"></div>
+    <div><label>Due / ship by</label><input name="due" type="date" value="${esc(o.due)}"></div></div>
+    <label>Tracking # / notes</label><textarea name="notes">${esc(o.notes)}</textarea>`,
+    d => { if (id) Object.assign(o, d); else db.orders.push({id:uid(), created:Date.now(), ...d}); },
+    id ? () => { db.orders = db.orders.filter(x => x.id !== id); } : null);
+}
+function editAction(id){
+  const a = db.actions.find(x => x.id === id) || {businessId:defaultBiz(), priority:'Medium'};
+  openForm(`<h3>${id?'Edit':'New'} action item</h3>
+    <label>Business</label><select name="businessId" required>${bizOptions(a.businessId)}</select>
+    <label>What needs to be done?</label><input name="title" value="${esc(a.title)}" required>
+    <div class="two"><div><label>Due date</label><input name="due" type="date" value="${esc(a.due)}"></div>
+    <div><label>Priority</label><select name="priority">${PRIORITIES.map(p=>`<option ${p===a.priority?'selected':''}>${p}</option>`).join('')}</select></div></div>
+    <label>Notes</label><textarea name="notes">${esc(a.notes)}</textarea>`,
+    d => { if (id) Object.assign(a, d); else db.actions.push({id:uid(), created:Date.now(), done:false, ...d}); },
+    id ? () => { db.actions = db.actions.filter(x => x.id !== id); } : null);
+}
+function editBiz(id){
+  const b = db.businesses.find(x => x.id === id) || {color: COLORS[db.businesses.length % COLORS.length]};
+  openForm(`<h3>${id?'Edit':'New'} business</h3>
+    <label>Business name</label><input name="name" value="${esc(b.name)}" required>
+    <label>Color</label><input name="color" type="color" value="${esc(b.color)}" style="height:44px;padding:4px">
+    <label>Notes (website, contact, etc.)</label><input name="notes" value="${esc(b.notes)}">`,
+    d => { if (id) Object.assign(b, d); else db.businesses.push({id:uid(), ...d}); },
+    id ? () => {
+      db.businesses = db.businesses.filter(x => x.id !== id);
+      db.orders = db.orders.filter(x => x.businessId !== id);
+      db.actions = db.actions.filter(x => x.businessId !== id);
+      if (bizFilter === id) bizFilter = 'all';
+    } : null);
+  if (id) {
+    const del = form.querySelector('#del');
+    const handler = del.onclick;
+    del.onclick = () => { alert('Deleting a business also deletes all of its orders and action items.'); handler(); };
+  }
+}
+
+/* ---------- backup ---------- */
+function exportData(){
+  const blob = new Blob([JSON.stringify(db, null, 2)], {type:'application/json'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = `business-tracker-backup-${today()}.json`;
+  document.body.appendChild(a); a.click(); a.remove();
+}
+function importData(e){
+  const file = e.target.files[0]; if (!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const d = JSON.parse(r.result);
+      if (!Array.isArray(d.businesses) || !Array.isArray(d.orders) || !Array.isArray(d.actions)) throw new Error('Not a tracker backup file');
+      if (!confirm('Replace everything on this device with the backup?')) return;
+      db = d; bizFilter = 'all'; save(); render();
+    } catch(err){ alert('Import failed: ' + err.message); }
+  };
+  r.readAsText(file);
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('nav button').forEach(b => b.onclick = () => { tab = b.dataset.tab; render(); window.scrollTo(0,0); });
+document.getElementById('fab').onclick = () => {
+  if (!db.businesses.length || tab === 'biz') return editBiz();
+  if (tab === 'actions') return editAction();
+  if (tab === 'orders') return editOrder();
+  form.innerHTML = `<h3>Add new…</h3><div class="btns" style="flex-direction:column">
+    <button type="button" class="btn" id="pickO">📦 Order</button>
+    <button type="button" class="btn" id="pickA">✅ Action item</button>
+    <button type="button" class="btn ghost" id="pickB">🏢 Business</button>
+    <button type="button" class="btn ghost" id="pickX">Cancel</button></div>`;
+  form.onsubmit = e => e.preventDefault();
+  form.querySelector('#pickO').onclick = () => { dlg.close(); editOrder(); };
+  form.querySelector('#pickA').onclick = () => { dlg.close(); editAction(); };
+  form.querySelector('#pickB').onclick = () => { dlg.close(); editBiz(); };
+  form.querySelector('#pickX').onclick = () => dlg.close();
+  dlg.showModal();
+};
+if ('serviceWorker' in navigator && location.protocol.startsWith('http')) navigator.serviceWorker.register('sw.js').catch(()=>{});
+render();
+</script>
+</body>
+</html>

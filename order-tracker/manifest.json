@@ -1,0 +1,13 @@
+{
+  "name": "Business Tracker",
+  "short_name": "Tracker",
+  "description": "Track orders and action items across multiple businesses.",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5f6f8",
+  "theme_color": "#1f3a5f",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}
