@@ -1,0 +1,367 @@
+<title>HOG3D Order Desk</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: sticky ink header with store/business chips, single column of order + task rows, fixed bottom tab bar. */
+:root{
+  --bg:#f3f4f2; --surface:#ffffff; --ink:#18212b; --muted:#5d6873; --line:#dde1df;
+  --head:#1d2a36; --head-fg:#f4f6f5; --accent:#e8a33a; --accent-ink:#1d1406;
+  --late:#b8322a; --late-bg:#fbe7e4; --ok:#2f7a4f; --ok-bg:#e1f2e7; --info:#2b5d8a; --info-bg:#e2edf7; --warn:#8a5a00; --warn-bg:#fbefd6;
+  --etsy:#d9622b; --ebay:#3a6fc4; --wix:#5b5b5b; --manual:#7a6a9c;
+  --f-display:"Barlow Semi Condensed", "Arial Narrow", system-ui, sans-serif;
+  --f-body:"IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --f-mono:"IBM Plex Mono", ui-monospace, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#121619; --surface:#1b2126; --ink:#e6eaec; --muted:#9aa6af; --line:#2c343b;
+  --head:#0d1215; --head-fg:#e6eaec; --accent:#f0b04f; --accent-ink:#1d1406;
+  --late:#f07a6f; --late-bg:#3a1d1b; --ok:#7fcf9d; --ok-bg:#16301f; --info:#8dbbe6; --info-bg:#172a3b; --warn:#f0c46a; --warn-bg:#352a12;
+  --etsy:#f08a55; --ebay:#79a2e6; --wix:#b5b5b5; --manual:#b3a3d6; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#121619; --surface:#1b2126; --ink:#e6eaec; --muted:#9aa6af; --line:#2c343b;
+  --head:#0d1215; --head-fg:#e6eaec; --accent:#f0b04f; --accent-ink:#1d1406;
+  --late:#f07a6f; --late-bg:#3a1d1b; --ok:#7fcf9d; --ok-bg:#16301f; --info:#8dbbe6; --info-bg:#172a3b; --warn:#f0c46a; --warn-bg:#352a12;
+  --etsy:#f08a55; --ebay:#79a2e6; --wix:#b5b5b5; --manual:#b3a3d6; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 var(--f-body)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--head)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--head);color:var(--head-fg);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px 10px}
+.hrow{display:flex;justify-content:space-between;align-items:baseline;gap:12px;max-width:760px;margin:0 auto}
+h1{margin:0;font:700 22px/1.1 var(--f-display);letter-spacing:.01em}
+#sync{font-size:12px;opacity:.75;text-align:right}
+.chips{display:flex;gap:6px;overflow-x:auto;padding-top:10px;scrollbar-width:none;max-width:760px;margin:0 auto}
+.chips::-webkit-scrollbar{display:none}
+.chip{flex:none;font:500 13px var(--f-body);border:1px solid color-mix(in srgb,var(--head-fg) 35%,transparent);background:transparent;color:var(--head-fg);border-radius:999px;padding:5px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--head-fg);color:var(--head);border-color:var(--head-fg);font-weight:600}
+.chip i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:6px;vertical-align:1px}
+main{max-width:760px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:14px calc(env(safe-area-inset-bottom,0px) + 96px)}
+nav{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;background:var(--surface);border-top:1px solid var(--line);
+  padding-bottom:env(safe-area-inset-bottom,0px);padding-left:env(safe-area-inset-left,0px);padding-right:env(safe-area-inset-right,0px)}
+nav button{flex:1;border:0;background:none;color:var(--muted);font:500 12px var(--f-body);padding:9px 0 8px;cursor:pointer}
+nav button svg{display:block;margin:0 auto 2px;width:22px;height:22px}
+nav button[aria-current="page"]{color:var(--ink);font-weight:600}
+nav button[aria-current="page"] svg{color:var(--accent)}
+.fab{position:fixed;right:calc(18px + env(safe-area-inset-right,0px));bottom:calc(env(safe-area-inset-bottom,0px) + 72px);width:56px;height:56px;border-radius:16px;border:0;background:var(--accent);color:var(--accent-ink);font:600 30px/1 var(--f-display);box-shadow:0 6px 18px rgba(0,0,0,.25);z-index:6;cursor:pointer}
+button:focus-visible,input:focus-visible,select:focus-visible,textarea:focus-visible,.row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.tiles{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-bottom:6px}
+@media (min-width:600px){.tiles{grid-template-columns:repeat(4,minmax(0,1fr))}}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.tile b{display:block;font:700 26px/1.1 var(--f-display);font-variant-numeric:tabular-nums}
+.tile span{font-size:13px;color:var(--muted)}
+.tile.alert b{color:var(--late)}
+h2{font:600 13px var(--f-body);text-transform:uppercase;letter-spacing:.08em;color:var(--muted);margin:20px 0 8px;display:flex;justify-content:space-between;align-items:baseline}
+h2 small{text-transform:none;letter-spacing:0;font-weight:400}
+.list{display:flex;flex-direction:column;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+.row{display:flex;gap:10px;align-items:flex-start;padding:11px 12px;border-top:1px solid var(--line);cursor:pointer;background:none;text-align:left;width:100%;color:inherit;font:inherit;border-left:0;border-right:0;border-bottom:0}
+.row:first-child{border-top:0}
+.row .main{flex:1;min-width:0}
+.row .t{font-weight:600;overflow-wrap:anywhere}
+.row .s{color:var(--muted);font-size:13px;overflow-wrap:anywhere}
+.row .amt{font:500 14px var(--f-mono);white-space:nowrap;font-variant-numeric:tabular-nums}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px;align-items:center}
+.pill{font-size:12px;font-weight:500;padding:1px 8px;border-radius:999px;background:var(--line);color:var(--ink);white-space:nowrap}
+.src{font:500 11px var(--f-mono);text-transform:uppercase;letter-spacing:.05em;padding:1px 6px;border-radius:4px;border:1px solid currentColor}
+.src.etsy{color:var(--etsy)}.src.ebay{color:var(--ebay)}.src.wix{color:var(--wix)}.src.manual{color:var(--manual)}
+.p-new{background:var(--info-bg);color:var(--info)}.p-making{background:var(--warn-bg);color:var(--warn)}
+.p-ready{background:var(--warn-bg);color:var(--warn)}.p-shipped,.p-done{background:var(--ok-bg);color:var(--ok)}
+.p-cancelled{background:var(--line);color:var(--muted)}.p-late{background:var(--late-bg);color:var(--late)}
+.p-high{background:var(--late-bg);color:var(--late)}.p-medium{background:var(--warn-bg);color:var(--warn)}.p-low{background:var(--line);color:var(--muted)}
+.box{width:24px;height:24px;flex:none;border:2px solid var(--muted);border-radius:6px;background:none;color:var(--accent-ink);cursor:pointer;display:grid;place-items:center;margin-top:1px}
+.box[aria-checked="true"]{background:var(--accent);border-color:var(--accent)}
+.row.done .t{text-decoration:line-through;color:var(--muted)}
+.bizline{display:inline-block;width:4px;align-self:stretch;border-radius:2px;flex:none}
+.toolbar{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.toolbar>*{flex:1 1 140px;min-width:0}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--line);border-radius:8px;background:var(--surface);color:var(--ink)}
+textarea{min-height:72px;resize:vertical}
+label{display:block;font-size:13px;color:var(--muted);margin:10px 0 4px}
+.two{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+.btn{border:0;border-radius:8px;padding:11px 16px;font:600 15px var(--f-body);background:var(--head);color:var(--head-fg);cursor:pointer}
+.btn.ghost{background:var(--line);color:var(--ink)}
+.btn.danger{background:var(--late);color:#fff}
+.btns{display:flex;gap:8px;margin-top:16px;flex-wrap:wrap}
+.btns .btn{flex:1 1 auto}
+.empty{color:var(--muted);padding:18px 12px;text-align:center}
+.note{font-size:13px;color:var(--muted);margin:8px 0 0}
+.banner{background:var(--warn-bg);color:var(--warn);border-radius:8px;padding:10px 12px;font-size:14px;margin-bottom:12px}
+.quick{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+.quick .btn{padding:7px 12px;font-size:13px}
+dialog{border:0;border-radius:16px 16px 0 0;width:100%;max-width:760px;margin:auto auto 0;background:var(--surface);color:var(--ink);max-height:92vh;overflow:auto;
+  padding:18px max(16px,env(safe-area-inset-right,0px)) calc(env(safe-area-inset-bottom,0px) + 18px) max(16px,env(safe-area-inset-left,0px))}
+dialog::backdrop{background:rgba(0,0,0,.5)}
+dialog h3{margin:0;font:700 20px var(--f-display)}
+.ro{font-size:13px;color:var(--muted);background:var(--bg);border-radius:8px;padding:8px 10px;margin-top:8px}
+@media (prefers-reduced-motion:no-preference){.row{transition:background .15s}.row:hover{background:color-mix(in srgb,var(--accent) 7%,transparent)}}
+</style>
+
+<header>
+  <div class="hrow"><h1>Order Desk</h1><div id="sync">Connecting…</div></div>
+  <div class="chips" id="chips" role="group" aria-label="Filter by business"></div>
+</header>
+<main id="main"><p class="empty">Loading your orders and action items…</p></main>
+<button class="fab" id="fab" aria-label="Add">+</button>
+<nav id="nav">
+  <button data-tab="home" aria-current="page"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></svg>Today</button>
+  <button data-tab="orders"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 7l9-4 9 4v10l-9 4-9-4z"/><path d="M3 7l9 4 9-4M12 11v10"/></svg>Orders</button>
+  <button data-tab="actions"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="3"/><path d="M8 12l3 3 5-6"/></svg>Actions</button>
+  <button data-tab="biz"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 21V5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v16M16 9h3a1 1 0 0 1 1 1v11M8 7h4M8 11h4M8 15h4M2 21h20"/></svg>Businesses</button>
+</nav>
+<dialog id="dlg"><form id="form" novalidate></form></dialog>
+
+<script>
+const STATUSES = [
+  ['new','New'],['making','Making'],['ready','Ready to ship'],['shipped','Shipped'],['cancelled','Cancelled']];
+const OPEN = new Set(['new','making','ready']);
+const PRIORITIES = [['high','High'],['medium','Medium'],['low','Low']];
+const SOURCES = {etsy:'Etsy', ebay:'eBay', wix:'Wix', manual:'Manual'};
+const COLORS = ['#d9622b','#2b5d8a','#2f7a4f','#7a4f9c','#b8862a','#1f8a8a','#b83a6e'];
+
+const state = {businesses:[], orders:[], actions:[], loaded:{businesses:false,orders:false,actions:false}};
+let tab='home', bizFilter='all', q='', statusFilter='open', srcFilter='all', showDone=false, db=null, canWrite=true;
+
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const todayStr = () => { const d=new Date(); return new Date(d.getTime()-d.getTimezoneOffset()*60000).toISOString().slice(0,10); };
+const money = n => (n===''||n==null||isNaN(n)) ? '' : Number(n).toLocaleString(undefined,{style:'currency',currency:'USD'});
+const fmtDate = d => d ? new Date(d+'T00:00').toLocaleDateString(undefined,{month:'short',day:'numeric'}) : '';
+const plural = (n,w) => `${n} ${w}${n===1?'':'s'}`;
+const biz = id => state.businesses.find(b=>b.id===id) || {name:'Unassigned', color:'#888'};
+const inBiz = x => bizFilter==='all' || x.businessId===bizFilter;
+const isOpen = o => OPEN.has(o.status||'new');
+const late = (due, open) => open && due && due < todayStr();
+const label = (list,k) => (list.find(x=>x[0]===k)||[k,k])[1];
+
+/* ---------- rendering ---------- */
+function chips(){
+  const c=$('#chips');
+  c.innerHTML = `<button class="chip" data-b="all" aria-pressed="${bizFilter==='all'}">All</button>` +
+    state.businesses.map(b=>`<button class="chip" data-b="${esc(b.id)}" aria-pressed="${bizFilter===b.id}"><i style="background:${esc(b.color)}"></i>${esc(b.name)}</button>`).join('');
+  c.querySelectorAll('.chip').forEach(el=>el.onclick=()=>{bizFilter=el.dataset.b; render();});
+}
+function orderRow(o){
+  const b=biz(o.businessId), open=isOpen(o), st=o.status||'new';
+  const src=o.source||'manual';
+  return `<button class="row" data-order="${esc(o.id)}">
+    <span class="bizline" style="background:${esc(b.color)}"></span>
+    <span class="main"><span class="t">${esc(o.customer||'Order')}${o.number?` <span class="s">#${esc(o.number)}</span>`:''}</span>
+      <span class="s" style="display:block">${esc(o.items||'')}</span>
+      <span class="meta"><span class="src ${src}">${esc(o.sourceLabel||SOURCES[src]||src)}</span>
+      <span class="pill p-${st}">${esc(label(STATUSES,st))}</span>
+      ${o.rush?'<span class="pill p-high">Rush</span>':''}
+      ${o.due?`<span class="pill ${late(o.due,open)?'p-late':''}">${late(o.due,open)?'Late · ':'Ship by '}${fmtDate(o.due)}</span>`:''}
+      ${o.storeOpen===false && open ? '<span class="pill p-shipped">Closed on store</span>':''}</span></span>
+    <span class="amt">${money(o.amount)}</span></button>`;
+}
+function actionRow(a){
+  const b=biz(a.businessId);
+  return `<div class="row ${a.done?'done':''}" data-action="${esc(a.id)}" tabindex="0" role="button">
+    <button class="box" role="checkbox" aria-checked="${!!a.done}" aria-label="Mark done" data-toggle="${esc(a.id)}">${a.done?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M5 12l5 5 9-10"/></svg>':''}</button>
+    <span class="main"><span class="t">${esc(a.title)}</span>
+      <span class="meta"><span class="s">${esc(b.name)}</span>
+      <span class="pill p-${a.priority||'medium'}">${esc(label(PRIORITIES,a.priority||'medium'))}</span>
+      ${a.due?`<span class="pill ${late(a.due,!a.done)?'p-late':''}">${late(a.due,!a.done)?'Overdue · ':'Due '}${fmtDate(a.due)}</span>`:''}</span></span></div>`;
+}
+const sortOrders = l => l.slice().sort((a,b)=> (a.due||'9999').localeCompare(b.due||'9999') || (b.date||'').localeCompare(a.date||''));
+const prio = p => ({high:0,medium:1,low:2})[p] ?? 1;
+const sortActions = l => l.slice().sort((a,b)=> (!!a.done-!!b.done) || (a.due||'9999').localeCompare(b.due||'9999') || prio(a.priority)-prio(b.priority));
+const list = (rows, empty) => rows.length ? `<div class="list">${rows.join('')}</div>` : `<div class="list"><p class="empty">${empty}</p></div>`;
+
+function viewHome(){
+  if (!state.businesses.length) return firstRun();
+  const orders=state.orders.filter(inBiz), acts=state.actions.filter(inBiz);
+  const open=orders.filter(isOpen), lateO=open.filter(o=>late(o.due,true));
+  const openA=acts.filter(a=>!a.done), lateA=openA.filter(a=>late(a.due,true));
+  const value=open.reduce((s,o)=>s+(Number(o.amount)||0),0);
+  let h=`<div class="tiles">
+    <div class="tile"><b>${open.length}</b><span>Open orders</span></div>
+    <div class="tile ${lateO.length?'alert':''}"><b>${lateO.length}</b><span>Late to ship</span></div>
+    <div class="tile"><b>${money(value)||'$0.00'}</b><span>Open order value</span></div>
+    <div class="tile ${lateA.length?'alert':''}"><b>${openA.length}</b><span>Open actions${lateA.length?` · ${lateA.length} overdue`:''}</span></div></div>`;
+  h+=`<h2>Ship next <small>${plural(open.length,'open order')}</small></h2>`+list(sortOrders(open).slice(0,6).map(orderRow),'No open orders right now.');
+  h+=`<h2>Action items <small>${plural(openA.length,'open')}</small></h2>`+list(sortActions(openA).slice(0,6).map(actionRow),'Nothing open. Tap + to add one.');
+  if (bizFilter==='all' && state.businesses.length>1){
+    h+=`<h2>By business</h2>`+list(state.businesses.map(b=>{
+      const bo=state.orders.filter(o=>o.businessId===b.id&&isOpen(o)).length, ba=state.actions.filter(a=>a.businessId===b.id&&!a.done).length;
+      return `<button class="row" data-pick="${esc(b.id)}"><span class="bizline" style="background:${esc(b.color)}"></span><span class="main"><span class="t">${esc(b.name)}</span><span class="s" style="display:block">${plural(bo,'open order')} · ${plural(ba,'open action')}</span></span></button>`;
+    }),'');
+  }
+  return h;
+}
+function viewOrders(){
+  if (!state.businesses.length) return firstRun();
+  let l=state.orders.filter(inBiz);
+  if (statusFilter==='open') l=l.filter(isOpen); else if (statusFilter!=='all') l=l.filter(o=>(o.status||'new')===statusFilter);
+  if (srcFilter!=='all') l=l.filter(o=>(o.source||'manual')===srcFilter);
+  const s=q.trim().toLowerCase();
+  if (s) l=l.filter(o=>[o.customer,o.number,o.items,o.notes,o.sourceLabel].join(' ').toLowerCase().includes(s));
+  return `<div class="toolbar">
+    <input id="q" type="search" placeholder="Search name, order #, item" value="${esc(q)}" aria-label="Search orders">
+    <select id="st" aria-label="Status"><option value="open">Open</option><option value="all">All statuses</option>${STATUSES.map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select>
+    <select id="sf" aria-label="Store"><option value="all">All stores</option>${Object.entries(SOURCES).map(([k,v])=>`<option value="${k}">${v}</option>`).join('')}</select></div>`
+    + list(sortOrders(l).map(orderRow), 'No orders match. Store orders appear here after each sync, or tap + to add one by hand.');
+}
+function viewActions(){
+  if (!state.businesses.length) return firstRun();
+  let l=state.actions.filter(inBiz); const doneN=l.filter(a=>a.done).length;
+  if (!showDone) l=l.filter(a=>!a.done);
+  return list(sortActions(l).map(actionRow),'No open action items. Tap + to add one.') +
+    (doneN?`<div class="btns"><button class="btn ghost" id="toggleDone">${showDone?'Hide':'Show'} completed (${doneN})</button></div>`:'');
+}
+function viewBiz(){
+  return list(state.businesses.map(b=>{
+    const n=state.orders.filter(o=>o.businessId===b.id).length, a=state.actions.filter(x=>x.businessId===b.id&&!x.done).length;
+    return `<button class="row" data-biz="${esc(b.id)}"><span class="bizline" style="background:${esc(b.color)}"></span><span class="main"><span class="t">${esc(b.name)}</span><span class="s" style="display:block">${plural(n,'order')} · ${plural(a,'open action')}${b.stores?` · ${esc(b.stores)}`:''}</span></span></button>`;
+  }),'No businesses yet.') + `<p class="note">Store orders sync in automatically a few times a day. Changes you make here (status, notes, action items) are saved online and show on every device you open this on.</p>`;
+}
+function firstRun(){
+  return `<div class="list"><div class="empty"><p><strong>No businesses yet.</strong></p><p>Add a business, then its orders and action items will show here.</p>
+    <button class="btn" id="addBizFirst">Add a business</button></div></div>`;
+}
+
+function render(){
+  chips();
+  const m=$('#main');
+  const allLoaded=Object.values(state.loaded).every(Boolean);
+  if (!db) { m.innerHTML=`<div class="banner">Your saved data can't be reached in this view. Open this page signed in to claude.ai to see and change your orders.</div>`; return; }
+  if (!allLoaded && !state.businesses.length && !state.orders.length) { m.innerHTML='<p class="empty">Loading your orders and action items…</p>'; return; }
+  m.innerHTML=(canWrite?'':'<div class="banner">You can view this tracker but not change it.</div>') + ({home:viewHome,orders:viewOrders,actions:viewActions,biz:viewBiz}[tab])();
+  document.querySelectorAll('nav button').forEach(b=>b.toggleAttribute('aria-current',false) || (b.dataset.tab===tab && b.setAttribute('aria-current','page')));
+  $('#fab').hidden = !canWrite;
+  m.querySelectorAll('[data-order]').forEach(el=>el.onclick=()=>editOrder(el.dataset.order));
+  m.querySelectorAll('[data-action]').forEach(el=>{el.onclick=()=>editAction(el.dataset.action); el.onkeydown=e=>{if(e.key==='Enter'&&e.target===el)editAction(el.dataset.action);};});
+  m.querySelectorAll('[data-biz]').forEach(el=>el.onclick=()=>editBiz(el.dataset.biz));
+  m.querySelectorAll('[data-pick]').forEach(el=>el.onclick=()=>{bizFilter=el.dataset.pick; render();});
+  m.querySelectorAll('[data-toggle]').forEach(el=>el.onclick=e=>{e.stopPropagation(); toggleAction(el.dataset.toggle);});
+  const qi=$('#q'); if(qi){qi.oninput=()=>{q=qi.value; const p=qi.selectionStart; render(); const n=$('#q'); n.focus(); n.setSelectionRange(p,p);};}
+  const st=$('#st'); if(st){st.value=statusFilter; st.onchange=()=>{statusFilter=st.value; render();};}
+  const sf=$('#sf'); if(sf){sf.value=srcFilter; sf.onchange=()=>{srcFilter=sf.value; render();};}
+  const td=$('#toggleDone'); if(td) td.onclick=()=>{showDone=!showDone; render();};
+  const ab=$('#addBizFirst'); if(ab) ab.onclick=()=>editBiz();
+}
+
+/* ---------- writes ---------- */
+let syncTimer=null;
+function setSync(text){ $('#sync').textContent=text; }
+async function write(fn, okMsg){
+  setSync('Saving…');
+  try { await fn(); setSync(okMsg||'Saved'); }
+  catch(e){
+    if (e && e.code==='invalid_argument' && !canWrite) setSync('Read-only');
+    else if (e && e.code==='unavailable'){ try{ await new Promise(r=>setTimeout(r,600+Math.random()*600)); await fn(); setSync('Saved'); return; }catch(_){} setSync('Not saved. Check your connection and try again.'); }
+    else setSync('Not saved: '+(e&&e.message||'unknown error'));
+  }
+}
+async function toggleAction(id){
+  const a=state.actions.find(x=>x.id===id); if(!a||!canWrite) return;
+  const done=!a.done;
+  await write(()=>db.doc('actions/'+id).update({done, doneAt: done?todayStr():null}), done?'Marked done':'Reopened');
+}
+
+/* ---------- forms ---------- */
+const dlg=$('#dlg'), form=$('#form');
+function openForm(html, onSave, onDelete, deleteWarning){
+  form.innerHTML = html + `<div class="btns">
+    ${onDelete?'<button type="button" class="btn danger" id="del">Delete</button>':''}
+    <button type="button" class="btn ghost" id="cancel">Cancel</button>
+    ${canWrite?'<button type="submit" class="btn" id="ok">Save</button>':''}</div><div id="confirmArea"></div>`;
+  $('#cancel').onclick=()=>dlg.close();
+  if (onDelete) $('#del').onclick=()=>{
+    $('#confirmArea').innerHTML=`<div class="banner" style="margin-top:12px">${deleteWarning||'Delete this for good?'}<div class="btns"><button type="button" class="btn danger" id="yesDel">Yes, delete</button><button type="button" class="btn ghost" id="noDel">Keep it</button></div></div>`;
+    $('#yesDel').onclick=async()=>{ dlg.close(); await write(onDelete,'Deleted'); };
+    $('#noDel').onclick=()=>{$('#confirmArea').innerHTML='';};
+  };
+  form.onsubmit=async e=>{
+    e.preventDefault();
+    const bad=[...form.querySelectorAll('[required]')].find(i=>!i.value.trim());
+    if (bad){ bad.focus(); bad.setAttribute('aria-invalid','true'); bad.placeholder='Required'; return; }
+    const data=Object.fromEntries(new FormData(form));
+    dlg.close(); await write(()=>onSave(data));
+  };
+  dlg.showModal();
+}
+const bizOpts = sel => state.businesses.map(b=>`<option value="${esc(b.id)}" ${b.id===sel?'selected':''}>${esc(b.name)}</option>`).join('');
+const defBiz = () => bizFilter!=='all'?bizFilter:(state.businesses[0]||{}).id;
+const newId = p => p+'-'+Date.now().toString(36)+Math.random().toString(36).slice(2,6);
+
+function editOrder(id){
+  const o=state.orders.find(x=>x.id===id) || {businessId:defBiz(), status:'new', date:todayStr(), source:'manual'};
+  const fromStore = id && o.source && o.source!=='manual';
+  const quick = id && canWrite ? `<div class="quick">${STATUSES.map(([k,v])=>`<button type="button" class="btn ${k===(o.status||'new')?'':'ghost'}" data-q="${k}">${v}</button>`).join('')}</div>` : '';
+  openForm(`<h3>${id?'Order':'New order'}${o.number?' #'+esc(o.number):''}</h3>
+    ${fromStore?`<div class="ro">From ${esc(o.sourceLabel||SOURCES[o.source])}. Customer, items and amount come from the store and refresh on each sync. Status and notes are yours.</div>`:''}
+    ${quick}
+    <label for="f-biz">Business</label><select id="f-biz" name="businessId" required>${bizOpts(o.businessId)}</select>
+    <div class="two"><div><label for="f-cust">Customer</label><input id="f-cust" name="customer" value="${esc(o.customer)}" required ${fromStore?'readonly':''}></div>
+    <div><label for="f-num">Order #</label><input id="f-num" name="number" value="${esc(o.number)}" ${fromStore?'readonly':''}></div></div>
+    <label for="f-items">Items</label><input id="f-items" name="items" value="${esc(o.items)}" ${fromStore?'readonly':''}>
+    <div class="two"><div><label for="f-amt">Amount ($)</label><input id="f-amt" name="amount" type="number" step="0.01" inputmode="decimal" value="${esc(o.amount)}" ${fromStore?'readonly':''}></div>
+    <div><label for="f-st">Status</label><select id="f-st" name="status">${STATUSES.map(([k,v])=>`<option value="${k}" ${k===(o.status||'new')?'selected':''}>${v}</option>`).join('')}</select></div></div>
+    <div class="two"><div><label for="f-date">Ordered</label><input id="f-date" name="date" type="date" value="${esc(o.date)}" ${fromStore?'readonly':''}></div>
+    <div><label for="f-due">Ship by</label><input id="f-due" name="due" type="date" value="${esc(o.due)}"></div></div>
+    <label for="f-notes">Tracking # / notes</label><textarea id="f-notes" name="notes">${esc(o.notes)}</textarea>`,
+    d=>{ const body={businessId:d.businessId,status:d.status,due:d.due||'',notes:d.notes||'',updatedAt:new Date().toISOString()};
+      if(!fromStore) Object.assign(body,{customer:d.customer,number:d.number,items:d.items,amount:d.amount===''?'':Number(d.amount),date:d.date});
+      return id ? db.doc('orders/'+id).update(body) : db.doc('orders/'+newId('m')).set({...body,source:'manual',createdAt:new Date().toISOString()}); },
+    id && canWrite && !fromStore ? ()=>db.doc('orders/'+id).delete() : null);
+  form.querySelectorAll('[data-q]').forEach(b=>b.onclick=async()=>{ dlg.close(); await write(()=>db.doc('orders/'+id).update({status:b.dataset.q,updatedAt:new Date().toISOString()}), 'Marked '+label(STATUSES,b.dataset.q).toLowerCase()); });
+}
+function editAction(id){
+  const a=state.actions.find(x=>x.id===id) || {businessId:defBiz(), priority:'medium'};
+  openForm(`<h3>${id?'Action item':'New action item'}</h3>
+    <label for="a-biz">Business</label><select id="a-biz" name="businessId" required>${bizOpts(a.businessId)}</select>
+    <label for="a-title">What needs to happen?</label><input id="a-title" name="title" value="${esc(a.title)}" required>
+    <div class="two"><div><label for="a-due">Due</label><input id="a-due" name="due" type="date" value="${esc(a.due)}"></div>
+    <div><label for="a-pr">Priority</label><select id="a-pr" name="priority">${PRIORITIES.map(([k,v])=>`<option value="${k}" ${k===(a.priority||'medium')?'selected':''}>${v}</option>`).join('')}</select></div></div>
+    <label for="a-notes">Notes</label><textarea id="a-notes" name="notes">${esc(a.notes)}</textarea>`,
+    d=>{ const body={businessId:d.businessId,title:d.title.trim(),due:d.due||'',priority:d.priority,notes:d.notes||''};
+      return id ? db.doc('actions/'+id).update(body) : db.doc('actions/'+newId('a')).set({...body,done:false,createdAt:new Date().toISOString()}); },
+    id && canWrite ? ()=>db.doc('actions/'+id).delete() : null);
+}
+function editBiz(id){
+  const b=state.businesses.find(x=>x.id===id) || {color:COLORS[state.businesses.length%COLORS.length]};
+  const n=id?state.orders.filter(o=>o.businessId===id).length+state.actions.filter(a=>a.businessId===id).length:0;
+  openForm(`<h3>${id?'Business':'New business'}</h3>
+    <label for="b-name">Name</label><input id="b-name" name="name" value="${esc(b.name)}" required>
+    <label for="b-color">Color</label><input id="b-color" name="color" type="color" value="${esc(b.color)}" style="height:44px;padding:4px">
+    <label for="b-stores">Stores (for your reference)</label><input id="b-stores" name="stores" value="${esc(b.stores)}" placeholder="e.g. Etsy, Wix">`,
+    d=>{ const body={name:d.name.trim(),color:d.color,stores:d.stores||''};
+      return id ? db.doc('businesses/'+id).update(body) : db.doc('businesses/'+newId('b')).set(body); },
+    id && canWrite && n===0 ? ()=>db.doc('businesses/'+id).delete() : null);
+}
+
+/* ---------- wiring ---------- */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{tab=b.dataset.tab; render(); window.scrollTo(0,0);});
+$('#fab').onclick=()=>{
+  if (!state.businesses.length || tab==='biz') return editBiz();
+  if (tab==='actions') return editAction();
+  if (tab==='orders') return editOrder();
+  form.innerHTML=`<h3>Add</h3><div class="btns" style="flex-direction:column">
+    <button type="button" class="btn" id="pa">Action item</button><button type="button" class="btn" id="po">Order (by hand)</button>
+    <button type="button" class="btn ghost" id="pb">Business</button><button type="button" class="btn ghost" id="px">Cancel</button></div>`;
+  form.onsubmit=e=>e.preventDefault();
+  $('#pa').onclick=()=>{dlg.close(); editAction();}; $('#po').onclick=()=>{dlg.close(); editOrder();};
+  $('#pb').onclick=()=>{dlg.close(); editBiz();}; $('#px').onclick=()=>dlg.close();
+  dlg.showModal();
+};
+
+(async function start(){
+  const use = async n => { try { return (await window.claude?.use?.(n)) ?? null; } catch(_) { return null; } };
+  db = await use('db');
+  const user = await use('user');
+  if (user){ try{ const c=await user.can('data.write'); if(c===false) canWrite=false; }catch(_){} }
+  if (!db){ setSync('Offline'); render(); return; }
+  const timeout=setTimeout(()=>setSync('Still connecting… data may be out of date'),10000);
+  for (const name of ['businesses','orders','actions']){
+    db.collection(name).onSnapshot(snap=>{
+      state[name]=snap.docs.map(d=>({id:d.id,...d.data()}));
+      state.loaded[name]=true;
+      if (!snap.metadata.fromCache){ clearTimeout(timeout); if(/Connecting|Still/.test($('#sync').textContent)) setSync('Up to date'); }
+      if (bizFilter!=='all' && !state.businesses.some(b=>b.id===bizFilter) && state.loaded.businesses) bizFilter='all';
+      if (!dlg.open) render();
+    }, err=>{ clearTimeout(timeout); state.loaded[name]=true; setSync(err.code==='revoked'?'Access changed':'Could not load '+name); render(); });
+  }
+  render();
+})();
+</script>
